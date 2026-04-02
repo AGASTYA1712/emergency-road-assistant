@@ -15,14 +15,26 @@ export default function Register() {
     setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Save to localStorage to mock a database registration
-    localStorage.setItem("targo_user", JSON.stringify(formData));
-    
-    // Redirect to login page for them to sign in
-    navigate("/login");
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: formData.name, email: formData.email, password: formData.password })
+      });
+      if (response.ok) {
+        navigate("/login");
+      } else {
+        const errData = await response.json();
+        alert(errData.error || "Registration failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to server");
+    }
   };
 
   return (

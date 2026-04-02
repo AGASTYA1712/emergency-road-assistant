@@ -34,40 +34,40 @@ export default function RequestHelp() {
     setSelectedEmergency(emergency);
   };
 
-  const handleConfirm = (e) => {
+  const handleConfirm = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate network latency
-    setTimeout(() => {
-      // 1. Generate partitioned database key exactly matching the problem
-      const dbKey = `targo_db_issue_${selectedEmergency.title.replace(/\s+/g, '_').toLowerCase()}`;
-      
-      // 2. Fetch logged in user to link the ticket
-      const userStr = localStorage.getItem("targo_user");
-      const user = userStr ? JSON.parse(userStr) : null;
+    try {
+      const token = localStorage.getItem('targo_token');
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          service_type: selectedEmergency.title,
+          location: 'Unknown Location', // To be enhanced later
+          vehicle: `${vehicleBrand} ${vehicleNumber}`
+        })
+      });
 
-      // 3. Create Ticket Payload
-      const payload = {
-        id: Date.now().toString(),
-        problem: selectedEmergency.title,
-        vehicleBrand,
-        vehicleNumber,
-        timestamp: new Date().toLocaleString(),
-        userEmail: user?.email || "unknown@system"
-      };
-
-      // 4. Inject into the separated LocalStorage Database
-      const existingDB = JSON.parse(localStorage.getItem(dbKey) || "[]");
-      existingDB.push(payload);
-      localStorage.setItem(dbKey, JSON.stringify(existingDB));
-
+      if (response.ok) {
+        alert(`Help for ${selectedEmergency.title} is on the way for your ${vehicleBrand} (${vehicleNumber})!`);
+        setSelectedEmergency(null);
+        setVehicleNumber("");
+        setVehicleBrand("");
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to submit request.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to server.");
+    } finally {
       setIsSubmitting(false);
-      alert(`Help for ${selectedEmergency.title} is on the way for your ${vehicleBrand} (${vehicleNumber})!`);
-      setSelectedEmergency(null);
-      setVehicleNumber("");
-      setVehicleBrand("");
-    }, 1500);
+    }
   };
 
   return (

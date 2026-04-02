@@ -8,22 +8,30 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const savedUserStr = localStorage.getItem("targo_user");
-    if (!savedUserStr) {
-      setError("No account found! Please register first.");
-      return;
-    }
-
-    const savedUser = JSON.parse(savedUserStr);
-
-    if (savedUser.email === email && savedUser.password === password) {
-      navigate("/dashboard");
-    } else {
-      setError("Invalid email or password!");
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('targo_token', data.token);
+        localStorage.setItem('targo_user_data', JSON.stringify(data.user));
+        navigate("/dashboard");
+      } else {
+        setError(data.error || "Invalid email or password!");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to connect to server");
     }
   };
 

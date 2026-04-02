@@ -8,34 +8,31 @@ export default function MyRequests() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Authenticate layout
-    const userStr = localStorage.getItem("targo_user");
-    if (!userStr) {
-      navigate("/login");
-      return;
-    }
-    const user = JSON.parse(userStr);
-
-    // Iterating over all localStorage to find our segregated DBs
-    const dbPrefix = "targo_db_issue_";
-    const userRequests = [];
-
-    // Scan the storage API
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(dbPrefix)) {
-            const dbData = JSON.parse(localStorage.getItem(key) || "[]");
-            // Pull out items matched purely by current logged in user email
-            const matchedLogs = dbData.filter(ticket => ticket.userEmail === user.email);
-            userRequests.push(...matchedLogs);
+    const fetchRequests = async () => {
+      const token = localStorage.getItem('targo_token');
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+      try {
+        const response = await fetch('/api/requests', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setRequests(data);
+        } else {
+          console.error("Failed to fetch requests");
         }
-    }
-
-    // Sort by newest timestamp conceptually (by ID string which uses Date.now)
-    userRequests.sort((a, b) => Number(b.id) - Number(a.id));
-
-    setRequests(userRequests);
-    setLoading(false);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequests();
   }, [navigate]);
 
   return (
@@ -72,7 +69,7 @@ export default function MyRequests() {
                 <div key={req.id} className="glass-card p-6 flex flex-col gap-4">
                     <div className="flex justify-between items-center border-b border-white/10 pb-4">
                         <h3 className="text-lg font-bold text-targo-red uppercase tracking-wider">
-                            {req.problem}
+                            {req.service_type}
                         </h3>
                         <span className="bg-targo-red text-white text-xs px-3 py-1 font-bold uppercase rounded-full">
                             Dispatched
@@ -82,13 +79,12 @@ export default function MyRequests() {
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3 text-sm text-gray-300">
                             <CarIcon size={16} className="text-gray-400" />
-                            <span className="font-bold text-white">{req.vehicleBrand}</span> 
-                            <span>({req.vehicleNumber})</span>
+                            <span className="font-bold text-white">{req.vehicle}</span> 
                         </div>
                         <div className="flex items-center gap-3 text-sm text-gray-300">
                             <Clock size={16} className="text-gray-400" />
                             <span>Requested at:</span>
-                            <span className="font-medium text-white">{req.timestamp}</span>
+                            <span className="font-medium text-white">{new Date(req.created_at).toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
