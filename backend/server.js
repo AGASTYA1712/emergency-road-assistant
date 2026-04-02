@@ -91,7 +91,7 @@ const path = require('path');
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Catch-all handler for any request that doesn't match an API route
-app.get('*', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
