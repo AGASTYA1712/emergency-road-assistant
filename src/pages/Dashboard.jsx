@@ -7,7 +7,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("Driver");
 
   useEffect(() => {
-    const userStr = localStorage.getItem("targo_user");
+    const userStr = localStorage.getItem("targo_user_data");
     if (!userStr) {
       navigate("/login");
     } else {
